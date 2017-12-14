@@ -1,21 +1,29 @@
 #pragma once
+#include <fstream>
 #include "User.h"
+#define FILE "User.txt"
 
-char *menuList[] = { "1. Create Account", "2. Log in", "3. Delete Account" , "4. Edit Info","5. Exit"};
+char *menuList[] = { "1. Create Account", "2. Log in", "3. Delete Account" , "4. Edit Info","5. Find PW", "6. Exit"};
 char *editList[] = { "1. Change PW", "2. Change Name" };
 
-void menu(vector<User> &uList, vector<string> &idList);
-void createUser(vector<User> &uList, vector<string> &lst);
-pair<bool, int> checkID(vector<string> idList, string id);
-void login();
-void delUser(vector<User> &uList, vector<string> &idList);
-void editInfo(vector<User> &uList, vector<string> &idList);
-void prn(vector<User> &uList);
+typedef vector<User> U;
+typedef vector<string> I;
+
+void menu(U &uList, I &idList);
+void pullData(U &uList, I &idList);
+void pushData(U &uList);
+void createUser(U &uList, I &lst);
+pair<bool, int> checkID(I idList, string id);
+void login(U uList, I idList);
+void findPW(U uList, I idList);
+void delUser(U &uList, I &idList);
+void editInfo(U &uList, I &idList);
+void prn(U &uList);
 void myflush();
 
-void menu(vector<User> &uList, vector<string> &idList) {
+void menu(U &uList, I &idList) {
 	int choice;
-
+	pullData(uList, idList);
 	while (1) {
 		for (auto t : menuList)
 			cout << t << endl;
@@ -27,20 +35,43 @@ void menu(vector<User> &uList, vector<string> &idList) {
 
 		switch (choice) {
 		case 1: createUser(uList, idList); break;
-		case 2: login(); break;
+		case 2: login(uList, idList); break;
 		case 3: delUser(uList, idList);  prn(uList); break;
 		case 4: editInfo(uList, idList); break;
-		case 5: cout << "\n* Exit the program ! *" << endl; break;
+		case 5: findPW(uList, idList); break;
+		case 6: cout << "\n* Exit the program ! *" << endl; return;
 		default: cout << "\n* Wrong Selection ! *" << endl;
 		}
-		if (choice == 5)
-			break;
 	}
 }
 
-void createUser(vector<User> &uList, vector<string> &lst) {
+void pullData(U &uList, I &idList) {
+	ifstream in(FILE);
+	string id, pw, name, birth;
+	while (!in.eof()) {
+		in >> id >> pw >> name >> birth;
+		uList.push_back(User(id, pw, name, birth));
+		idList.push_back(id);
+	}
+	in.close();
+}
+
+/*
+	수정이 필요합니다.
+	데이터를 삭제 후, 파일 덮어쓰기가 안됨
+*/
+void pushData(U &uList) {
+	ofstream out(FILE, ios_base::in);
+	out << uList[0].getlogInfo().first << " " <<uList[0].getlogInfo().second << " " << uList[0].getName() << " " << uList[0].getBirth();
+	for (auto t : uList)
+		out << "\n" << t.getlogInfo().first << " " << t.getlogInfo().second << " " << t.getName() << " " << t.getBirth();
+	out.close();
+}
+
+void createUser(U &uList, I &lst) {
 	string id, pw, name;
-	int birth;
+	string birth;
+	ofstream out(FILE, ios_base::app);
 	while (1) {
 		cout << "Enter the ID to use : ";
 		cin >> id;
@@ -61,29 +92,80 @@ void createUser(vector<User> &uList, vector<string> &lst) {
 	
 	cout << "Enter your name : ";
 	cin >> name;
-	cout << "Enter your Birth year : ";
+	cout << "Enter your Identification Number : ";
 	cin >> birth;
 	uList.push_back(User(id, pw, name, birth));
 	lst.push_back(id);
 	myflush();
+	out << "\n" << id << " " << pw << " " << name << " " << birth;
+	out.close();
 }
 
 /*
 	이미 존재하는 id일 경우 : true
 	존재하는 id가 아닌 경우 : false
 */
-pair<bool, int> checkID(vector<string> idList, string id) {
+pair<bool, int> checkID(I idList, string id) {
 	auto iter = find(idList.begin(), idList.end(), id);
 	return iter != idList.end() ? pair<bool, int>(true, iter - idList.begin()) : pair<bool, int>(false, -1);
 }
 
-void login() {
-	return;
+void login(U uList, I idList) {
+	string id, pw;
+	pair<bool, int> check;
+	
+	while (1) {
+		cout << "\nID : ";
+		cin >> id;
+		check = checkID(idList, id);
+		if (check.first)
+			break;
+		cout << "\n* This id isn't existed ! *" << endl;
+		myflush();
+	}
+
+	for(int i=0;i<5; i++) {
+		cout << "PW : ";
+		cin >> pw;
+		if (uList[check.second].getlogInfo().second == pw) {
+			cout << "* Welcome to Gun's World ! *" << endl;
+			return;
+		}
+		cout << "\n* Passwords do not match ! *" << endl;
+		myflush();
+	}
+	cout << "* You Failed 5 times *" << endl;
 }
 
-void delUser(vector<User> &uList, vector<string> &idList) {
+void findPW(U uList, I idList) {
+	string name, id, birth;
+	pair<bool, int> check;
+
+	cout << "\nEnter your name : ";
+	cin >> name;
+	cout << "Enter your ID : ";
+
+	cin >> id;
+	cout << "Enter your Identification Number : ";
+	cin >> birth;
+
+	check = checkID(idList, id);
+	if (!check.first) {
+		cout << "\n* No data of this ID *" << endl;
+		return;
+	}
+
+	if (uList[check.second].getName() == name &&
+		uList[check.second].getBirth() == birth)
+		cout << "\n<" << uList[check.second].getlogInfo().second << "> is your password !" << endl;
+	else 
+		cout << "* No Matching information exists *" << endl;
+}
+
+void delUser(U &uList, I &idList) {
 	string del,choice;
 	pair<bool, int> tmp;
+	
 	while (1) {
 		cout << "Enter the ID to delete : ";
 		cin >> del;
@@ -103,9 +185,12 @@ void delUser(vector<User> &uList, vector<string> &idList) {
 		cout << "\n* Cannot find the Informations of the ID !*\n" << endl;
 		myflush();
 	}
+	ofstream out(FILE, ios_base::trunc);
+	out.close();
+	pushData(uList);
 }
 
-void editInfo(vector<User> &uList, vector<string> &idList) {
+void editInfo(U &uList, I &idList) {
 	string id;
 	int choice;
 	cout << "Enter the ID to Edit : ";
@@ -130,7 +215,11 @@ void editInfo(vector<User> &uList, vector<string> &idList) {
 	}
 }
 
-void prn(vector<User> &uList) {
+void prn(U &uList) {
+	if (uList.size() == 0) {
+		cout << "\n* No data ! *\n" << endl;
+		return;
+	}
 	for (auto t : uList)
 		t.info();
 }

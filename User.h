@@ -10,15 +10,17 @@ class User {
 private:
 	pair<string, string> logInfo;
 	string name;
-	int birth;
+	string birth;
 public:
-	User(string id, string pw, string name, int birth) :name(name), birth(birth) {
+	User(string id, string pw, string name, string birth) :name(name), birth(birth) {
 		logInfo.first = id;
 		logInfo.second = pw;
 	}
 	virtual ~User(){}
 	bool static checkSecurity(string np);
 	pair<string,string> getlogInfo() { return logInfo; }
+	string getName() { return name; }
+	string getBirth() { return birth; }
 	void changePW();
 	void changeName();
 	void info();
@@ -59,5 +61,5 @@ void User::info() {
 	cout << "ID : " << logInfo.first << endl;
 	cout << "PW : " << logInfo.second << endl;
 	cout << "Name : " << name << endl;
-	cout << "Age : " << birth << "\n" << endl;
+	cout << "Identification Number : " << birth << "\n" << endl;
 }
